@@ -1,0 +1,3 @@
+CopyOnWriteArrayList的原理是读写分离，写时复制。
+
+即在对集合进行增删操作的时候才加ReentrantLock
