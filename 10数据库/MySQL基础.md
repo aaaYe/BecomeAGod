@@ -1860,3 +1860,131 @@ SELECT SUM;
 
 
 # 存储过程和函数
+
+事先经过编译并存储在数据库中的一组sql语句的集合。
+
+> 优点
+
+1. 简化应用开发人员的很多工作。
+2. 减少数据在数据库中和应用服务器之间的传输。
+3. 提高了数据处理的效率。
+
+## 创建存储过程和函数
+
+```sql
+#存储过程
+/*
+含义：一组预先编译好的SQL语句的集合，理解成批处理语句
+1、提高了代码的重用性。
+2、简化操作。
+3、减少了编译次数并且减少了和数据库服务器的连接次数，提高了效率。
+*/
+
+#一、创建语法
+CREATE PROCEDURE 存储过程名(参数列表)
+BEGIN
+	存储过程(一组合法的SQL语句)
+END
+
+-- 注意：
+-- 1、参数列表包含三部分
+-- 参数模式	参数名	参数类型
+-- 举例：IN stuname VARCHAR(20)
+-- 
+-- 参数模式：
+-- IN:该参数可以作为输入，也就是该参数需要调用方传入值
+-- OUT:该参数可以作为输出，也就是该参数可以作为返回值
+-- INOUT:该参数既可以作为输入也可以作为输出，也就是该参数既需要传入值，也可以返回值。
+-- 
+-- 2、如果存储过程体仅仅只有一句话，BEGIN END 可以省略
+-- 存储过程体中的每条SQL语句的结尾要求必须加分号。
+-- 存储过程的结尾可以使用 DELIMITER 重新设置
+-- 语法：DELIMITER 结束标记
+-- 案例：DELIMITER $
+
+#二、调用语法
+CALL 存储过程名(实参列表);
+-- 案例:插入5条数据到admin表
+SELECT * FROM admin;
+
+CREATE PROCEDURE myp1()
+BEGIN
+	INSERT INTO admin(username,`password`) 
+	VALUES('john1','0000'),('lily','0000'),('rose','0000'),('jack','0000'),('tom','0000');
+END $
+
+CALL myp1()
+
+-- 2、创建带in模式参数存储过程
+-- 案例1:创建存储过程实现 根据女神名查询对应的男神名
+delimiter $
+
+CREATE PROCEDURE myp2(IN beautyName VARCHAR(20))
+BEGIN
+	SELECT bo.*
+	FROM boys bo
+	RIGHT JOIN beauty b ON bo.id = b.boyfriend_id
+	WHERE b.name=beautyName;
+END $
+
+CALL myp2('小昭')$
+
+-- 案例2:创建存储过程，用户是否登录成功
+delimiter $
+
+CREATE PROCEDURE myp3(IN username VARCHAR(20),IN password VARCHAR(20))
+BEGIN
+	DECLARE result VARCHAR(20) DEFAULT ''; -- 声明并赋值
+	SELECT COUNT(*) into result FROM admin WHERE admin.username = username AND admin.`password` = password;
+	SELECT result;
+END $
+
+CALL myp3('张飞','8888')$
+
+CREATE PROCEDURE myp4(IN username VARCHAR(20),IN password VARCHAR(20))
+BEGIN
+	DECLARE result INT DEFAULT 0;
+	SELECT COUNT(*) INTO result
+	FROM admin
+	WHERE admin.username = username
+	AND admin.`password` = password;
+	SELECT IF(result>0,'登录成功','登录失败');
+END $
+
+CALL myp4('rose','0000')$
+
+-- 3.创建带out参数的存储过程
+-- 案例1:根据女神名返回对应的男神名
+CREATE PROCEDURE myp5(IN beautyName VARCHAR(20),OUT boyName VARCHAR(20))
+BEGIN
+	SELECT bo.boyname INTO boyname
+	FROM boys bo
+	RIGHT JOIN beauty b ON b.boyfriend_id = bo.id
+	WHERE b.name=beautyName ;
+END $
+
+CALL myp5('小昭',@bName)$
+SELECT @bName$
+
+-- 案例2:根据女神名,返回对应男神的魅力值
+CREATE PROCEDURE myp7(IN beautyName VARCHAR(20),OUT boyName VARCHAR(20),OUT usercp INT) 
+BEGIN
+	SELECT boys.boyname ,boys.usercp INTO boyname,usercp
+	FROM boys 
+	RIGHT JOIN
+	beauty b ON b.boyfriend_id = boys.id
+	WHERE b.name=beautyName ;
+END $
+
+CALL myp7('小昭',@name,@cp)$
+SELECT @name,@cp$
+
+```
+
+
+
+## 修改存储过程和函数
+
+## 调用存储过程和函数
+
+## 查看存储过程和函数
