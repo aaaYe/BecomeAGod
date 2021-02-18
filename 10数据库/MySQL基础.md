@@ -1979,12 +1979,89 @@ END $
 CALL myp7('小昭',@name,@cp)$
 SELECT @name,@cp$
 
+-- 4.创建带inout模式参数的存储过程
+-- 案例1:传入a和b两个值，最终a和b都翻倍并返回
+
+delimiter $
+CREATE PROCEDURE myp8(INOUT a INT,INOUT b INT)
+BEGIN
+	SET	a=a*2;
+	SET	b=b*2;
+END $
+-- 调用
+SET	@m=10$
+SET @n=20$
+CALL myp8(@m,@n)$
+SELECT @m,@n$
+
+#三、删除存储过程
+#语法：drop procedure 存储过程名
+DROP PROCEDURE p1;
+DROP PROCEDURE p2,p3;#×
+
+#四、查看存储过程的信息
+DESC myp2;×不可以
+SHOW CREATE PROCEDURE  myp2;
+```
+
+> 存储过程案例
+>
+
+```sql
+-- 存储过程案例
+-- 一、创建存储过程实现传入用户名和密码，插入到admin表中
+delimiter $
+CREATE PROCEDURE test_pro1(IN username VARCHAR(20),IN loginPwd VARCHAR(20))
+BEGIN
+	INSERT INTO admin(admin.username,admin.`password`) VALUES (username,loginPwd);
+END $
+
+-- 二、创建存储过程实现传入女神编号，返回女神名和女神电话
+CREATE PROCEDURE test_pro2(IN id INT,OUT NAME VARCHAR(20),OUT phone VARCHAR(20))
+BEGIN
+	SELECT b.name ,b.phone INTO NAME,phone
+	FROM beauty b
+	WHERE b.id = id;
+END $
+CALL test_pro2(1,@m,@n) $
+SELECT @m,@n$
+
+-- 三、创建存储过程或函数实现传入两个女神生日，返回大小
+delimiter $
+CREATE PROCEDURE test_pro3(IN birth1 DATETIME,IN birth2 DATETIME,OUT result INT)
+BEGIN
+	SELECT DATEDIFF(birth1,birth2) INTO result;
+END $
+CALL test_pro3('1997-1-1',NOW(),@result)$
+SELECT @result$
+
+
+-- 四、创建存储过程或函数，实现传入一个日期，格式化成xx年xx月xx日并返回
+CREATE PROCEDURE test_pro4(IN mydate datetime,OUT strDate VARCHAR(50))
+BEGIN
+	SELECT DATE_FORMAT(mydate,'%y年%m月%d日') INTO strDate;
+END $
+
+CALL test_pro4(NOW(),@strDate)$
+SELECT @strDate$
+
+-- 五、创建存储过程或函数，实现传入女神名称，返回女神and男神 格式的字符串
+CREATE PROCEDURE test_pro5(IN beautyName VARCHAR(20),OUT str VARCHAR(50))
+BEGIN
+	SELECT CONCAT(beautyName,' and ',IFNULL(boys.boyName,'null'))
+	FROM boys 
+	RIGHT JOIN beauty ON beauty.boyfriend_id = boys.id
+	WHERE beauty.`name` = beautyName;
+END$
+
+CALL test_pro5('柳岩', @str)$
+
+-- 六、创建存储过程或函数，根据传入的条目数和起始索引，查询beauty表的记录
+CREATE PROCEDURE test_pro6(IN startIndex INT,IN size INT)
+BEGIN
+	SELECT * FROM beauty LIMIT startIndex,size;
+END$
+CALL test_pro6(3,5)$
 ```
 
 
-
-## 修改存储过程和函数
-
-## 调用存储过程和函数
-
-## 查看存储过程和函数
