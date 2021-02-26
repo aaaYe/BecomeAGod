@@ -2064,4 +2064,439 @@ END$
 CALL test_pro6(3,5)$
 ```
 
+## 函数
+
+一组预先编译好的SQL语句的集合，理解成批处理语句。
+
+1. 提高了代码的重用性。
+2. 简化操作。
+3. 减少了编译次数并且减少了和数据库服务器的连接次数，提高了效率。
+
+和存储过程的区别
+
+- 存储过程：可以有0个返回，也可以有多个返回，适合做批处理插入、批量更新。
+- 函数：有且仅有1个返回，适合做数据处理后返回一个结果。
+
+```sql
+-- 一组预先编译好的SQL语句的集合，理解成批处理语句。
+-- 
+-- 1. 提高了代码的重用性。
+-- 2. 简化操作。
+-- 3. 减少了编译次数并且减少了和数据库服务器的连接次数，提高了效率。
+-- 
+-- 和存储过程的区别
+-- 
+-- - 存储过程：可以有0个返回，也可以有多个返回，适合做批处理插入、批量更新。
+-- - 函数：有且仅有1个返回，适合做数据处理后返回一个结果。
+
+一、创建语法
+CREATE FUNCTION 函数名(参数列表(参数名 参数类型)) RETURNS 返回类型
+BEGIN
+	函数体
+END
+注意:
+1、参数列表包含两部分--参数名和参数类型。
+2、函数体:肯定有return语句，如果没有会报错；如果return语句没有放在函数体最后也不会报错，但不建议
+return值：
+3、函数体中仅有一句时，可以省略begin end
+4、使用delimiter语句设置结束标记
+
+二、调用语法
+SELECT 函数名(参数列表)
+```
+
+> 案例
+
+```sql
+#函数
+/*
+含义：一组预先编译好的SQL语句的集合，理解成批处理语句
+1、提高代码的重用性
+2、简化操作
+3、减少了编译次数并且减少了和数据库服务器的连接次数，提高了效率
+
+区别：
+
+存储过程：可以有0个返回，也可以有多个返回，适合做批量插入、批量更新
+函数：有且仅有1 个返回，适合做处理数据后返回一个结果
+
+*/
+
+#一、创建语法
+CREATE FUNCTION 函数名(参数列表) RETURNS 返回类型
+BEGIN
+	函数体
+END
+/*
+
+注意：
+1.参数列表 包含两部分：
+参数名 参数类型
+
+2.函数体：肯定会有return语句，如果没有会报错
+如果return语句没有放在函数体的最后也不报错，但不建议
+
+return 值;
+3.函数体中仅有一句话，则可以省略begin end
+4.使用 delimiter语句设置结束标记
+
+*/
+
+#二、调用语法
+SELECT 函数名(参数列表)
+
+
+#------------------------------案例演示----------------------------
+#1.无参有返回
+#案例：返回公司的员工个数
+CREATE FUNCTION myf1() RETURNS INT
+BEGIN
+
+	DECLARE c INT DEFAULT 0;#定义局部变量
+	SELECT COUNT(*) INTO c#赋值
+	FROM employees;
+	RETURN c;
+	
+END $
+
+SELECT myf1()$
+
+
+#2.有参有返回
+#案例1：根据员工名，返回它的工资
+
+CREATE FUNCTION myf2(empName VARCHAR(20)) RETURNS DOUBLE
+BEGIN
+	SET @sal=0;#定义用户变量 
+	SELECT salary INTO @sal   #赋值
+	FROM employees
+	WHERE last_name = empName;
+	
+	RETURN @sal;
+END $
+
+SELECT myf2('k_ing') $
+
+#案例2：根据部门名，返回该部门的平均工资
+
+CREATE FUNCTION myf3(deptName VARCHAR(20)) RETURNS DOUBLE
+BEGIN
+	DECLARE sal DOUBLE ;
+	SELECT AVG(salary) INTO sal
+	FROM employees e
+	JOIN departments d ON e.department_id = d.department_id
+	WHERE d.department_name=deptName;
+	RETURN sal;
+END $
+
+SELECT myf3('IT')$
+
+#三、查看函数
+
+SHOW CREATE FUNCTION myf3;
+
+#四、删除函数
+DROP FUNCTION myf3;
+
+#案例
+#一、创建函数，实现传入两个float，返回二者之和
+
+CREATE FUNCTION test_fun1(num1 FLOAT,num2 FLOAT) RETURNS FLOAT
+BEGIN
+	DECLARE SUM FLOAT DEFAULT 0;
+	SET SUM=num1+num2;
+	RETURN SUM;
+END $
+
+SELECT test_fun1(1,2)$
+
+```
+
+# 流程控制结构
+
+说明：
+
+1. 顺序结构：程序从上往下执行。
+2. 分支结构：程序按条件进行选择执行，从两条或多条路径中选择一条。
+3. 循环结构：程序满足一定条件时，重复执行一组语句。
+
+## 分支结构
+
+```sql
+#一、分支结构
+#1.if函数
+/*
+语法：if(条件,值1，值2)
+功能：实现双分支
+应用在begin end中或外面
+
+*/
+
+#2.case结构
+/*
+语法：
+情况1：类似于switch
+case 变量或表达式
+when 值1 then 语句1;
+when 值2 then 语句2;
+...
+else 语句n;
+end 
+
+情况2：
+case 
+when 条件1 then 语句1;
+when 条件2 then 语句2;
+...
+else 语句n;
+end 
+
+应用在begin end 中或外面
+
+
+*/
+
+#3.if结构
+
+/*
+语法：
+if 条件1 then 语句1;
+elseif 条件2 then 语句2;
+....
+else 语句n;
+end if;
+功能：类似于多重if
+
+只能应用在begin end 中
+
+*/
+
+#案例1：创建函数，实现传入成绩，如果成绩>90,返回A，如果成绩>80,返回B，如果成绩>60,返回C，否则返回D
+
+CREATE FUNCTION test_if(score FLOAT) RETURNS CHAR
+BEGIN
+	DECLARE ch CHAR DEFAULT 'A';
+	IF score>90 THEN SET ch='A';
+	ELSEIF score>80 THEN SET ch='B';
+	ELSEIF score>60 THEN SET ch='C';
+	ELSE SET ch='D';
+	END IF;
+	RETURN ch;
+	
+	
+END $
+
+SELECT test_if(87)$
+
+#案例2：创建存储过程，如果工资<2000,则删除，如果5000>工资>2000,则涨工资1000，否则涨工资500
+
+
+CREATE PROCEDURE test_if_pro(IN sal DOUBLE)
+BEGIN
+	IF sal<2000 THEN DELETE FROM employees WHERE employees.salary=sal;
+	ELSEIF sal>=2000 AND sal<5000 THEN UPDATE employees SET salary=salary+1000 WHERE employees.`salary`=sal;
+	ELSE UPDATE employees SET salary=salary+500 WHERE employees.`salary`=sal;
+	END IF;
+	
+END $
+
+CALL test_if_pro(2100)$
+
+#案例1：创建函数，实现传入成绩，如果成绩>90,返回A，如果成绩>80,返回B，如果成绩>60,返回C，否则返回D
+
+CREATE FUNCTION test_case(score FLOAT) RETURNS CHAR
+BEGIN 
+	DECLARE ch CHAR DEFAULT 'A';
+	
+	CASE 
+	WHEN score>90 THEN SET ch='A';
+	WHEN score>80 THEN SET ch='B';
+	WHEN score>60 THEN SET ch='C';
+	ELSE SET ch='D';
+	END CASE;
+	
+	RETURN ch;
+END $
+
+SELECT test_case(56)$
+```
+
+## 循环结构
+
+```sql
+#二、循环结构
+/*
+分类：
+while、loop、repeat
+
+循环控制：
+
+iterate类似于 continue，继续，结束本次循环，继续下一次
+leave 类似于  break，跳出，结束当前所在的循环
+
+*/
+
+#1.while
+/*
+
+语法：
+
+【标签:】while 循环条件 do
+	循环体;
+end while【 标签】;
+
+联想：
+
+while(循环条件){
+
+	循环体;
+}
+
+*/
+
+#2.loop
+/*
+
+语法：
+【标签:】loop
+	循环体;
+end loop 【标签】;
+
+可以用来模拟简单的死循环
+
+
+
+*/
+
+#3.repeat
+/*
+语法：
+【标签：】repeat
+	循环体;
+until 结束循环的条件
+end repeat 【标签】;
+
+
+*/
+
+#1.没有添加循环控制语句
+#案例：批量插入，根据次数插入到admin表中多条记录
+DROP PROCEDURE pro_while1$
+CREATE PROCEDURE pro_while1(IN insertCount INT)
+BEGIN
+	DECLARE i INT DEFAULT 1;
+	WHILE i<=insertCount DO
+		INSERT INTO admin(username,`password`) VALUES(CONCAT('Rose',i),'666');
+		SET i=i+1;
+	END WHILE;
+	
+END $
+
+CALL pro_while1(100)$
+
+
+/*
+
+int i=1;
+while(i<=insertcount){
+
+	//插入
+	
+	i++;
+
+}
+
+*/
+
+
+#2.添加leave语句
+
+#案例：批量插入，根据次数插入到admin表中多条记录，如果次数>20则停止
+TRUNCATE TABLE admin$
+DROP PROCEDURE test_while1$
+CREATE PROCEDURE test_while1(IN insertCount INT)
+BEGIN
+	DECLARE i INT DEFAULT 1;
+	a:WHILE i<=insertCount DO
+		INSERT INTO admin(username,`password`) VALUES(CONCAT('xiaohua',i),'0000');
+		IF i>=20 THEN LEAVE a;
+		END IF;
+		SET i=i+1;
+	END WHILE a;
+END $
+
+
+CALL test_while1(100)$
+
+
+#3.添加iterate语句
+
+#案例：批量插入，根据次数插入到admin表中多条记录，只插入偶数次
+TRUNCATE TABLE admin$
+DROP PROCEDURE test_while1$
+CREATE PROCEDURE test_while1(IN insertCount INT)
+BEGIN
+	DECLARE i INT DEFAULT 0;
+	a:WHILE i<=insertCount DO
+		SET i=i+1;
+		IF MOD(i,2)!=0 THEN ITERATE a;
+		END IF;
+		
+		INSERT INTO admin(username,`password`) VALUES(CONCAT('xiaohua',i),'0000');
+		
+	END WHILE a;
+END $
+
+
+CALL test_while1(100)$
+
+/*
+
+int i=0;
+while(i<=insertCount){
+	i++;
+	if(i%2==0){
+		continue;
+	}
+	插入
+	
+}
+
+*/
+```
+
+> 案例
+
+```sql
+/*一、已知表stringcontent
+其中字段：
+id 自增长
+content varchar(20)
+
+向该表插入指定个数的，随机的字符串
+*/
+DROP TABLE IF EXISTS stringcontent;
+CREATE TABLE stringcontent(
+	id INT PRIMARY KEY AUTO_INCREMENT,
+	content VARCHAR(20)
+	
+);
+DELIMITER $
+CREATE PROCEDURE test_randstr_insert(IN insertCount INT)
+BEGIN
+	DECLARE i INT DEFAULT 1;
+	DECLARE str VARCHAR(26) DEFAULT 'abcdefghijklmnopqrstuvwxyz';
+	DECLARE startIndex INT;#代表初始索引
+	DECLARE len INT;#代表截取的字符长度
+	WHILE i<=insertcount DO
+		SET startIndex=FLOOR(RAND()*26+1);#代表初始索引，随机范围1-26
+		SET len=FLOOR(RAND()*(20-startIndex+1)+1);#代表截取长度，随机范围1-（20-startIndex+1）
+		INSERT INTO stringcontent(content) VALUES(SUBSTR(str,startIndex,len));
+		SET i=i+1;
+	END WHILE;
+
+END $
+
+CALL test_randstr_insert(10)$
+```
 
